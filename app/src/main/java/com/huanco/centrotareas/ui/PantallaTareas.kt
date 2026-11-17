@@ -28,6 +28,7 @@ fun PantallaTareas(vm: TareasViewModel) {
     val cargando = carga == CargaUi.Cargando
     val primos by vm.primos.collectAsState()
     val calculando = primos == PrimosUi.Calculando
+    val historial by vm.historialCargas.collectAsState()
     var limite by rememberSaveable { mutableStateOf("1000") }
     val hasta = limite.toIntOrNull()?.takeIf { it >= 2 }
     var toques by rememberSaveable { mutableIntStateOf(0) }
@@ -150,6 +151,43 @@ fun PantallaTareas(vm: TareasViewModel) {
                         }
                     }
                     CargaUi.Inicial -> Unit
+                }
+
+                if (historial.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Comparación de Tiempos Acumulados",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Modo", style = MaterialTheme.typography.labelMedium)
+                                Text("Tiempo (ms)", style = MaterialTheme.typography.labelMedium)
+                            }
+                            HorizontalDivider()
+                            historial.forEach { item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(item.modo, style = MaterialTheme.typography.bodyMedium)
+                                    Text("${item.milisegundos} ms", style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
