@@ -9,6 +9,8 @@ import com.huanco.centrotareas.model.PrimosUi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,5 +86,31 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
 
     fun cancelarPrimos() {
         trabajoPrimos?.cancel()
+    }
+
+    fun cargarUnaPorUna() = cargar("Una por una") {
+        val perfil = repo.cargarPerfil()
+        val pedidos = repo.cargarPedidos(false)
+        perfil to pedidos.size
+    }
+
+    fun cargarALaVez() = cargar("A la vez") {
+        coroutineScope {
+            val perfil = async { repo.cargarPerfil() }
+            val pedidos = async { repo.cargarPedidos(false) }
+            perfil.await() to pedidos.await().size
+        }
+    }
+
+    private fun cargar(modo: String, obtenerDatos: suspend () -> Pair<String, Int>) {
+        if (_carga.value == CargaUi.Cargando) return
+
+        viewModelScope.launch {
+            _carga.value = CargaUi.Cargando
+            val inicio = System.nanoTime()
+            val (perfil, pedidos) = obtenerDatos()
+            val milisegundos = (System.nanoTime() - inicio) / 1_000_000
+            _carga.value = CargaUi.Exito(modo, perfil, pedidos, milisegundos)
+        }
     }
 }
