@@ -3,11 +3,14 @@ package com.huanco.centrotareas.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
+import com.huanco.centrotareas.model.PrimosUi
 import kotlin.math.roundToInt
 import com.huanco.centrotareas.viewmodel.TareasViewModel
 
@@ -17,6 +20,10 @@ fun PantallaTareas(vm: TareasViewModel) {
     val mensaje by vm.mensaje.collectAsState()
     val progreso by vm.progreso.collectAsState()
     val corriendo by vm.corriendo.collectAsState()
+    val primos by vm.primos.collectAsState()
+    val calculando = primos == PrimosUi.Calculando
+    var limite by rememberSaveable { mutableStateOf("1000") }
+    val hasta = limite.toIntOrNull()?.takeIf { it >= 2 }
     var toques by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
@@ -56,14 +63,36 @@ fun PantallaTareas(vm: TareasViewModel) {
             }
             TarjetaTarea("Contar números primos") {
                 OutlinedTextField(
-                    value = "1000",
-                    onValueChange = {},
-                    enabled = false,
-                    label = { Text("Hasta") }
+                    value = limite,
+                    onValueChange = { limite = it },
+                    enabled = !calculando,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = { Text("Hasta el número") }
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = {}, enabled = false) { Text("Contar") }
-                    OutlinedButton(onClick = {}, enabled = false) { Text("Cancelar") }
+                    Button(
+                        onClick = { hasta?.let(vm::contar) },
+                        enabled = hasta != null && !calculando
+                    ) { Text("Contar") }
+                    OutlinedButton(onClick = vm::cancelarPrimos, enabled = calculando) {
+                        Text("Cancelar")
+                    }
+                }
+                when (val estado = primos) {
+                    PrimosUi.Inicial -> Unit
+                    PrimosUi.Calculando -> Text("Calculando...")
+                    PrimosUi.Cancelado -> Text("Cancelado")
+                    is PrimosUi.Listo -> Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.tertiaryContainer
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("Cantidad de primos: ${estado.cantidad}")
+                            Text("Tiempo: ${estado.milisegundos} ms")
+                        }
+                    }
                 }
             }
             TarjetaTarea("Dos cargas") {
