@@ -33,14 +33,13 @@ fun PantallaTareas(vm: TareasViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedButton(onClick = { toques++ }) {
-                Text("Tócame ($toques)")
+                Text("Tócame: $toques")
             }
             TarjetaTarea("Tarea con progreso") {
-                Text(mensaje)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = {}, enabled = false) { Text("Iniciar") }
-                    OutlinedButton(onClick = {}, enabled = false) { Text("Cancelar") }
+                Button(onClick = vm::tareaLargaMala) {
+                    Text("Tarea larga (MAL)")
                 }
+                Text(mensaje)
             }
             TarjetaTarea("Contar números primos") {
                 OutlinedTextField(

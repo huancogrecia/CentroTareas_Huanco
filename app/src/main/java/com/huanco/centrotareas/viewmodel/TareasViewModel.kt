@@ -17,4 +17,10 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
 
     private val _carga = MutableStateFlow<CargaUi>(CargaUi.Inicial)
     val carga: StateFlow<CargaUi> = _carga.asStateFlow()
+
+    fun tareaLargaMala() {
+        _mensaje.value = "Trabajando..."
+        Thread.sleep(4000)
+        _mensaje.value = "Terminó"
+    }
 }
