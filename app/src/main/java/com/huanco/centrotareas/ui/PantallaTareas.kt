@@ -8,12 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.huanco.centrotareas.viewmodel.TareasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaTareas(vm: TareasViewModel) {
     val mensaje by vm.mensaje.collectAsState()
+    val progreso by vm.progreso.collectAsState()
     var toques by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
@@ -37,9 +39,14 @@ fun PantallaTareas(vm: TareasViewModel) {
             }
             TarjetaTarea("Tarea con progreso") {
                 Button(onClick = vm::tareaLarga) {
-                    Text("Tarea larga")
+                    Text("Iniciar")
                 }
                 Text(mensaje)
+                LinearProgressIndicator(
+                    progress = { progreso },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("${(progreso * 100).roundToInt()} %")
             }
             TarjetaTarea("Contar números primos") {
                 OutlinedTextField(
