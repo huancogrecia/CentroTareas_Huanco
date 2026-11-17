@@ -1,13 +1,11 @@
 package com.huanco.centrotareas.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.huanco.centrotareas.data.TareasRepository
 import com.huanco.centrotareas.model.CargaUi
 import com.huanco.centrotareas.model.PrimosUi
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -16,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     private val _mensaje = MutableStateFlow("Listo")
@@ -30,6 +27,9 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
 
     private val _carga = MutableStateFlow<CargaUi>(CargaUi.Inicial)
     val carga: StateFlow<CargaUi> = _carga.asStateFlow()
+
+    private val _historialCargas = MutableStateFlow<List<CargaUi.Exito>>(emptyList())
+    val historialCargas: StateFlow<List<CargaUi.Exito>> = _historialCargas.asStateFlow()
 
     private var trabajo: Job? = null
     private val _corriendo = MutableStateFlow(false)
@@ -103,6 +103,29 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
         }
     }
 
+    private suspend fun <T> retryWithBackoff(
+        times: Int = 3,
+        initialDelay: Long = 500,
+        factor: Double = 2.0,
+        block: suspend () -> T
+    ): T {
+        var currentDelay = initialDelay
+        repeat(times) { attempt ->
+            try {
+                return block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (attempt == times - 1) {
+                    throw e
+                }
+                delay(currentDelay)
+                currentDelay = (currentDelay * factor).toLong()
+            }
+        }
+        throw IllegalStateException("Should not reach here")
+    }
+
     private fun cargar(modo: String, obtenerDatos: suspend (Boolean) -> Pair<String, Int>) {
         if (_carga.value == CargaUi.Cargando) return
 
@@ -110,9 +133,13 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
             _carga.value = CargaUi.Cargando
             val inicio = System.nanoTime()
             try {
-                val (perfil, pedidos) = obtenerDatos(_simularError.value)
+                val (perfil, pedidos) = retryWithBackoff(times = 3, initialDelay = 500) {
+                    obtenerDatos(_simularError.value)
+                }
                 val milisegundos = (System.nanoTime() - inicio) / 1_000_000
-                _carga.value = CargaUi.Exito(modo, perfil, pedidos, milisegundos)
+                val exito = CargaUi.Exito(modo, perfil, pedidos, milisegundos)
+                _carga.value = exito
+                _historialCargas.value = _historialCargas.value + exito
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
             } catch (error: Exception) {
