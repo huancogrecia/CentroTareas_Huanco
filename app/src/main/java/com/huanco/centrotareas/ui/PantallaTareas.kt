@@ -36,8 +36,8 @@ fun PantallaTareas(vm: TareasViewModel) {
                 Text("Tócame: $toques")
             }
             TarjetaTarea("Tarea con progreso") {
-                Button(onClick = vm::tareaLargaMala) {
-                    Text("Tarea larga (MAL)")
+                Button(onClick = vm::tareaLarga) {
+                    Text("Tarea larga")
                 }
                 Text(mensaje)
             }
