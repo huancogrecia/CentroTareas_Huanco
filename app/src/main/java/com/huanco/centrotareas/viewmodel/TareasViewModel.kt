@@ -43,15 +43,9 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
             try {
                 _progreso.value = 0f
                 _mensaje.value = "Trabajando..."
-                Log.d("HILO", "Antes: ${Thread.currentThread().name}")
-                withContext(Dispatchers.Default) {
-                    Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
-                    for (i in 1..100) {
-                        delay(40)
-                        _progreso.value = i / 100f
-                    }
+                repo.simularProgreso().collect { avance ->
+                    _progreso.value = avance
                 }
-                Log.d("HILO", "Despues: ${Thread.currentThread().name}")
                 _mensaje.value = "Terminó"
             } catch (cancelacion: CancellationException) {
                 _mensaje.value = "Cancelado"
