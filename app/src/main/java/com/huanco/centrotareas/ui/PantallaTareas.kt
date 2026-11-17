@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ fun PantallaTareas(vm: TareasViewModel) {
     val progreso by vm.progreso.collectAsState()
     val corriendo by vm.corriendo.collectAsState()
     val carga by vm.carga.collectAsState()
+    val simularError by vm.simularError.collectAsState()
     val cargando = carga == CargaUi.Cargando
     val primos by vm.primos.collectAsState()
     val calculando = primos == PrimosUi.Calculando
@@ -100,6 +102,17 @@ fun PantallaTareas(vm: TareasViewModel) {
                 }
             }
             TarjetaTarea("Dos cargas") {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Switch(
+                        checked = simularError,
+                        onCheckedChange = vm::cambiarSimularError,
+                        enabled = !cargando
+                    )
+                    Text("Simular error")
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = vm::cargarUnaPorUna, enabled = !cargando) {
                         Text("Una por una")
@@ -123,7 +136,20 @@ fun PantallaTareas(vm: TareasViewModel) {
                             Text("Tiempo: ${estado.milisegundos} ms")
                         }
                     }
-                    else -> Unit
+                    is CargaUi.Error -> {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ) {
+                            Text(estado.mensaje, modifier = Modifier.padding(12.dp))
+                        }
+                        OutlinedButton(onClick = vm::cargarALaVez) {
+                            Text("Reintentar")
+                        }
+                    }
+                    CargaUi.Inicial -> Unit
                 }
             }
         }
